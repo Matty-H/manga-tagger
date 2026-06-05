@@ -1,5 +1,6 @@
 // src/components/RightSidebar.jsx
 import { useEffect, useRef } from 'react';
+import { SquareSplitHorizontal, ChevronRight } from 'lucide-react';
 import { PALETTE, getBaseCategory, parseImagePath } from '../utils';
 
 export default function RightSidebar({
@@ -28,6 +29,37 @@ export default function RightSidebar({
         {Object.entries(folderGroups).map(([folder, paths]) => {
           const isCurrentFolder = folderKey === folder;
           
+          // -- CALCUL DES ERREURS DE SPLIT --
+          let currentSplitCount = 0;
+          let splitGroup = [];
+          const splitErrors = new Set();
+
+          paths.forEach((p, idx) => {
+            const isSplit = annotations[p]?.is_split;
+            const isLandscape = imageCache[p]?.isLandscape || annotations[p]?.is_landscape;
+
+            if (isLandscape) {
+              if (currentSplitCount > 0 && currentSplitCount % 2 !== 0) {
+                splitGroup.forEach(errP => splitErrors.add(errP));
+              }
+              currentSplitCount = 0;
+              splitGroup = [];
+            } else if (isSplit) {
+              currentSplitCount++;
+              splitGroup.push(p);
+            } else {
+              if (currentSplitCount > 0 && currentSplitCount % 2 !== 0) {
+                splitGroup.forEach(errP => splitErrors.add(errP));
+              }
+              currentSplitCount = 0;
+              splitGroup = [];
+            }
+
+            if (idx === paths.length - 1 && currentSplitCount > 0 && currentSplitCount % 2 !== 0) {
+              splitGroup.forEach(errP => splitErrors.add(errP));
+            }
+          });
+
           return (
             <div 
               key={folder} 
@@ -45,7 +77,6 @@ export default function RightSidebar({
                   
                   const cacheData = imageCache[p];
                   const isAnalyzed = cacheData !== undefined;
-                  // Si l'ancien cache local est toujours là, il renvoie un booléen. Sinon, on lit la prop isColor
                   const isColorFlag = typeof cacheData === 'boolean' ? cacheData : cacheData?.isColor;
                   
                   let dotColor = 'transparent';
@@ -60,12 +91,20 @@ export default function RightSidebar({
                   const isActive = p === currentPath;
                   const isAnalyzing = p === analyzingPath;
                   
-                  let dotClass = "w-[12px] h-[12px] rounded-[2px] transition-transform ";
+                  const isSplit = annotations[p]?.is_split;
+                  const isSplitError = splitErrors.has(p);
+                  const isChapterStart = annotations[p]?.is_chapter_start;
+                  const isLandscape = cacheData?.isLandscape || annotations[p]?.is_landscape;
+                  
+                  let dotClass = "w-[12px] h-[12px] rounded-[2px] transition-transform relative flex items-center justify-center ";
+                  
                   if (isActive) dotClass += "ring-2 ring-black scale-125 z-10 ";
                   else if (isAnalyzing) dotClass += "ring-2 ring-[#3B82F6] animate-pulse scale-110 z-10 ";
                   else if (!isAnalyzed) dotClass += "border-[0.5px] border-[#ccc] bg-transparent hover:scale-110 hover:ring-1 hover:ring-gray-400 ";
                   else dotClass += "hover:scale-110 hover:ring-1 hover:ring-gray-400 ";
-                  
+
+                  if (isSplitError) dotClass += "ring-2 ring-red-500 animate-bounce ";
+
                   return (
                     <button
                       key={p}
@@ -73,7 +112,25 @@ export default function RightSidebar({
                       onClick={() => jumpToImage(p)}
                       className={dotClass}
                       style={isAnalyzed ? { backgroundColor: dotColor } : {}}
-                    />
+                    >
+                      {isSplit && !isLandscape && (
+                        <SquareSplitHorizontal 
+                          size={10} 
+                          color="white" 
+                          strokeWidth={2.5} 
+                          className="z-10" 
+                        />
+                      )}
+
+                      {isChapterStart && (
+                        <ChevronRight 
+                        size={10} 
+                        color="white" 
+                        strokeWidth={2.5} 
+                        className="z-10" 
+                      />
+                      )}
+                    </button>
                   );
                 })}
               </div>

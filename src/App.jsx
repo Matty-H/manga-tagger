@@ -220,53 +220,92 @@ export default function App() {
     }
   }, [imageCache]);
 
+  
+
   // ─── Navigation & Labellisation ────────────────────────────────────────────
+  const toggleFlag = useCallback((flagName) => {
+    if (!currentPath) return;
+    setAnnotations(prev => {
+      const currentAnnot = prev[currentPath];
+      // Optionnel : empêcher de flagger si la page n'a pas encore de catégorie
+      if (!currentAnnot) return prev; 
+      
+      const newAnnotations = {
+        ...prev,
+        [currentPath]: { ...currentAnnot, [flagName]: !currentAnnot[flagName] }
+      };
+      triggerSave(newAnnotations);
+      return newAnnotations;
+    });
+  }, [currentPath, triggerSave]);
+  
+  // Modifie ton handleAnnotate pour gérer l'auto-start du chapitre
   const handleAnnotate = useCallback((baseCategory) => {
     if (!currentPath) return;
-
+  
     setAnnotations(prev => {
       const newAnnotations = { ...prev };
       let hasUpdates = false;
-
-      const applyLabelToPath = (path, categoryToApply) => {
+  
+      // Ajout du paramètre 'forceStartFlag'
+      // Dans App.jsx, au niveau de la fonction applyLabelToPath (dans handleAnnotate)
+      const applyLabelToPath = (path, categoryToApply, forceStartFlag = false) => {
         const info = parseImagePath(path);
-        const hash = imageCacheRef.current[path]?.hash || null;
         
+        // On récupère les infos du cache (hash, couleur, ratio)
+        const cacheParams = imageCacheRef.current[path] || {};
+        const existing = prev[path] || {};
+        
+        // L'image est-elle paysage ? (On regarde le cache, sinon on garde l'ancienne valeur)
+        const isLandscape = existing.is_landscape || cacheParams.isLandscape || false;
+
         newAnnotations[path] = {
+          ...existing,
           file_path: path,
           file_name: info.filename,
           category: categoryToApply,
           magazine: info.magazine,
           numero: info.numero,
-          image_hash: hash
+          image_hash: cacheParams.hash || null,
+          is_chapter_start: forceStartFlag || existing.is_chapter_start || false,
+          is_split: existing.is_split || false,
+          is_landscape: isLandscape // Auto-tag !
         };
         hasUpdates = true;
       };
-
+  
       if (baseCategory === 'Manga') {
-        if (mangaStartIndex === null) return prev;
-        const start = Math.min(mangaStartIndex, safeIdx);
-        const end = Math.max(mangaStartIndex, safeIdx);
-        for (let i = start; i <= end; i++) applyLabelToPath(filteredList[i], 'Manga');
+        if (mangaStartIndex !== null) {
+          const start = Math.min(mangaStartIndex, safeIdx);
+          const end = Math.max(mangaStartIndex, safeIdx);
+          for (let i = start; i <= end; i++) {
+            // La toute première page du batch manga devient le start
+            applyLabelToPath(filteredList[i], 'Manga', i === start);
+          }
+        } else {
+          // Labellisation unique : on regarde si la page précédente est "Manga"
+          const prevPath = safeIdx > 0 ? filteredList[safeIdx - 1] : null;
+          const prevIsManga = prevPath && prev[prevPath]?.category === 'Manga';
+          applyLabelToPath(currentPath, 'Manga', !prevIsManga);
+        }
       } else {
         if (mangaStartIndex !== null) {
           const isForward = safeIdx > mangaStartIndex;
           const start = isForward ? mangaStartIndex : safeIdx + 1;
           const end = isForward ? safeIdx - 1 : mangaStartIndex;
-          for (let i = start; i <= end; i++) applyLabelToPath(filteredList[i], 'Manga');
+          for (let i = start; i <= end; i++) applyLabelToPath(filteredList[i], 'Manga', i === start);
           applyLabelToPath(filteredList[safeIdx], baseCategory);
         } else {
           applyLabelToPath(currentPath, baseCategory);
         }
       }
-
+  
       if (hasUpdates) triggerSave(newAnnotations);
       return hasUpdates ? newAnnotations : prev;
     });
-
-    if (baseCategory === 'Manga' && mangaStartIndex === null) {
-      setMangaStartIndex(safeIdx);
-    } else {
+  
+    if (baseCategory === 'Manga' && mangaStartIndex === null) setMangaStartIndex(safeIdx);
+    else {
       setMangaStartIndex(null);
       if (labelFilter !== 'unlabeled') setFilteredIdx(prev => Math.min(filteredList.length - 1, prev + 1));
     }
@@ -336,6 +375,16 @@ export default function App() {
   useEffect(() => {
     const onKey = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        toggleFlag('is_split');
+        return;
+      }
+      if (e.code === 'Enter') {
+        e.preventDefault();
+        toggleFlag('is_chapter_start');
+        return;
+      }
       const k = e.key.toLowerCase();
       if (k === 'arrowleft')  { setFilteredIdx(prev => Math.max(0, prev - 1)); return; }
       if (k === 'arrowright') { setFilteredIdx(prev => Math.min(filteredList.length - 1, prev + 1)); return; }
@@ -344,7 +393,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [handleAnnotate, filteredList.length]);
+  }, [handleAnnotate, filteredList.length, toggleFlag]);
 
   const totalCount   = IMAGE_LIST.length;
   const labeledCount = Object.keys(annotations).length;
@@ -372,6 +421,8 @@ export default function App() {
         handlePrevFolder={handlePrevFolder} handleNextFolder={handleNextFolder}
         setFilteredIdx={setFilteredIdx}
         currentHash={currentHash} 
+        annotations={annotations} 
+        imageCache={imageCache}
       />
       
       <RightSidebar 

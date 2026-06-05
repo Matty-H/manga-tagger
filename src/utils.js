@@ -126,7 +126,8 @@ function computeDHash(imgEl) {
 export function analyzeImage(imgEl) {
   return {
     isColor: detectColorFromImg(imgEl),
-    hash: computeDHash(imgEl)
+    hash: computeDHash(imgEl),
+    isLandscape: imgEl.naturalWidth > imgEl.naturalHeight
   };
 }
 
