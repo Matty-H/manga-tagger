@@ -8,7 +8,7 @@ const ROW3 = ['w', 'x', 'c', 'v', 'b', 'n'];
 
 // Pour la légende en bas
 const ERGO_KEYS = ['a', 'z', 'e', 'd']; // Position de repos "Gamer" (Auriculaire, Annulaire, Majeur, Index)
-const MNEMO_KEYS = ['s', 'r', 'c', 'b', 'l', 'x']; // Initiales logiques
+const MNEMO_KEYS = ['s', 'r', 'c', 'b', 'l', 'n', 'x']; // Initiales logiques
 
 const KeyboardRow = ({ keys, offsetClass, currentLabel, mangaStartIndex, handleAnnotate }) => (
   // Réduction du gap à 2px pour éviter les débordements
@@ -195,11 +195,11 @@ export default function LeftSidebar({
         </div>
 
         {/* Légende scindée par fréquence */}
-        <div className="flex-1 overflow-y-auto px-4 py-[14px]">
+        <div className="flex-1 overflow-y-auto px-4 py-px">
           <div className="flex gap-[12px]">
             <LabelList 
               hotkeys={ERGO_KEYS} 
-              title="Repos (ZQSD)" 
+              // title="Repos (ZQSD)" 
               currentLabel={currentLabel} 
               mangaStartIndex={mangaStartIndex} 
               handleAnnotate={handleAnnotate} 
@@ -207,7 +207,7 @@ export default function LeftSidebar({
             <div className="w-px bg-[#eee] self-stretch rounded-full" />
             <LabelList 
               hotkeys={MNEMO_KEYS} 
-              title="Rares (Mnémo)" 
+              // title="Rares (Mnémo)" 
               currentLabel={currentLabel} 
               mangaStartIndex={mangaStartIndex} 
               handleAnnotate={handleAnnotate} 

@@ -12,6 +12,7 @@ export const CHOICES = [
   { value: 'Concours',      hotkey: 'c' },
   { value: 'Bonus',         hotkey: 'b' },
   { value: 'LineUp',        hotkey: 'l' },
+  { value: 'Novel',         hotkey: 'n' },
   { value: 'Autre',         hotkey: 'x' },
 ];
 
@@ -25,6 +26,7 @@ export const PALETTE = {
   'Couverture':      { c: '#EF4444', bw: '#FCA5A5' },
   'Bonus':           { c: '#06B6D4', bw: '#67E8F9' },
   'LineUp':          { c: '#84CC16', bw: '#D9F99D' },
+  'Novel':           { c: '#4F46E5', bw: '#C7D2FE' },
   'Autre':           { c: '#6B7280', bw: '#D1D5DB' },
   'Non labellisé':   { c: '#94A3B8', bw: '#E2E8F0' },
 };

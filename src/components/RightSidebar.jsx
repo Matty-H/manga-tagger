@@ -94,7 +94,6 @@ export default function RightSidebar({
                   const isSplit = annotations[p]?.is_split;
                   const isSplitError = splitErrors.has(p);
                   const isChapterStart = annotations[p]?.is_chapter_start;
-                  const isLandscape = cacheData?.isLandscape || annotations[p]?.is_landscape;
                   
                   let dotClass = "w-[12px] h-[12px] rounded-[2px] transition-transform relative flex items-center justify-center ";
                   
@@ -113,7 +112,7 @@ export default function RightSidebar({
                       className={dotClass}
                       style={isAnalyzed ? { backgroundColor: dotColor } : {}}
                     >
-                      {isSplit && !isLandscape && (
+                      {isSplit && (
                         <SquareSplitHorizontal 
                           size={10} 
                           color="white" 

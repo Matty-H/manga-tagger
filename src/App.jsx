@@ -268,8 +268,8 @@ export default function App() {
           numero: info.numero,
           image_hash: cacheParams.hash || null,
           is_chapter_start: forceStartFlag || existing.is_chapter_start || false,
-          is_split: existing.is_split || false,
-          is_landscape: isLandscape // Auto-tag !
+          is_landscape: isLandscape,
+          is_split: existing.is_split || isLandscape
         };
         hasUpdates = true;
       };
